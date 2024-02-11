@@ -111,31 +111,7 @@
         let points = L.geoJSON(testCities).addTo(map)
         pointIndex = leafletKnn(points)
 
-        map.on('click', (e) => {
-            // onMapClick(e)
-            console.log(e.latlng)
-            // console.log(e.latlng.lat)
 
-            let nearestResult = pointIndex.nearest(e.latlng, 1)[0]
-            let cityName = nearestResult.layer.feature.properties.name
-            let coOrds = nearestResult.layer.feature.geometry.coordinates
-            console.log(`${cityName} is the nearest!`);
-
-            setTimeout(() => {
-                // map.flyTo([coOrds[1], coOrds[0]], 13)
-                // map.panTo([coOrds[1], coOrds[0]], 13)
-                // map.setView(new L.LatLng(coOrds[0], coOrds[1]), 13);
-                // nearestResult.layer.bindPopup(`${cityName} is the nearest!`).openPopup()
-                var popup = L.popup()
-                    .setLatLng([e.latlng.lat, e.latlng.lng])
-                    .setContent(`Lat: ${e.latlng.lat.toFixed(2)}, Lon: ${e.latlng.lng.toFixed(2)}<br><b>${cityName}</b> is the nearest!`)
-                    .openOn(map);
-            }, 250)
-
-            // console.log(nearestResult)
-
-
-        })
 
         let marker, circle, zoomed;
         function success(pos) {
@@ -180,6 +156,65 @@
             } else {
                 alert("Cannot get current location");
             }
+
+        }
+
+        map.on('click', (e) => {
+            // onMapClick(e)
+            console.log(e.latlng)
+            // console.log(e.latlng.lat)
+
+            let nearestResult = pointIndex.nearest(e.latlng, 1)[0]
+            let cityName = nearestResult.layer.feature.properties.name
+            let coOrds = nearestResult.layer.feature.geometry.coordinates
+            console.log(`${cityName} is the nearest!`);
+
+            setTimeout(() => {
+                // map.flyTo([coOrds[1], coOrds[0]], 13)
+                // map.panTo([coOrds[1], coOrds[0]], 13)
+                // map.setView(new L.LatLng(coOrds[0], coOrds[1]), 13);
+                // nearestResult.layer.bindPopup(`${cityName} is the nearest!`).openPopup()
+                var popup = L.popup()
+                    .setLatLng([e.latlng.lat, e.latlng.lng])
+                    .setContent(`Lat: ${e.latlng.lat.toFixed(2)}, Lon: ${e.latlng.lng.toFixed(2)}<br><b>${cityName}</b> is the nearest!`)
+                    .openOn(map);
+            }, 250)
+
+            // console.log(nearestResult)
+
+
+        })
+
+
+        if (!navigator.geolocation) {
+            console.log('browser does not support geolocation...');
+
+        } else {
+            setInterval(() => {
+
+                navigator.geolocation.getCurrentPosition(getPosition)
+            }, 3000)
+        }
+
+        function getPosition(position) {
+            console.log(position)
+            let lat = position.coords.latitude
+            let lon = position.coords.longitude
+            let accuracy = position.coords.accuracy
+            console.log(lat, lon, accuracy)
+
+            if (marker) {
+                map.removeLayer(marker)
+                map.removeLayer(circle)
+            }
+
+            marker = L.marker([lat, lon]).addTo(map)
+            circle = L.circle([lat, lon], { radius: accuracy }).addTo(map)
+
+            let featureGroup = L.featureGroup([marker, circle]).addTo(map)
+
+            map.fitBounds(featureGroup.getBounds())
+
 
         }
 
