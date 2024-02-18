@@ -64,7 +64,6 @@
         }).addTo(map);
 
 
-
         function onMapClick(e) {
             console.log('onMapClick', e)
             popup
@@ -73,6 +72,9 @@
                 .openOn(map);
 
         }
+
+        // ***********************************************************************************
+        // Control Buttons
 
         L.Control.Button = L.Control.extend({
             onAdd: function (map) {
@@ -87,15 +89,27 @@
 
                 return container;
             },
-
             onRemove: function (map) {
                 // Nothing to do here
 
             },
             submit: function (e) {
-                L.DomEvent.preventDefault(e);
-                console.log('Getting location...');
-                navigator.geolocation.watchPosition(success, error);
+                L.DomEvent.preventDefault(e)
+                console.log('Getting location...')
+                L.DomEvent.stopPropagation(e)
+                console.log('Stopped propagation...')
+                // navigator.geolocation.watchPosition(success, error)
+                // navigator.geolocation.getCurrentPosition(getPosition)
+                if (!navigator.geolocation) {
+                    console.log('browser does not support geolocation...');
+                } else {
+                    setInterval(() => {
+                        // navigator.geolocation.getCurrentPosition(getPosition)
+                        navigator.geolocation.watchPosition(success, error)
+                        console.log('Watching location...');
+                    }, 3000)
+                }
+
             }
         });
 
@@ -105,11 +119,56 @@
 
         L.control.button({ position: 'topleft' }).addTo(map);
 
+        // Control Buttons
+
+        L.Control.Button = L.Control.extend({
+            onAdd: function (map) {
+                let container = L.DomUtil.create('div', 'leaflet-control-locate leaflet-bar leaflet-control');
+                // this.form = L.DomUtil.create('form', 'form', container);
+                this.locationLink = L.DomUtil.create('a', 'leaflet-bar-part leaflet-bar-part-single', container);
+                this.locationLink.title = 'Show Cities'
+                this.locationLink.href = '#'
+                this.locationLink.role = 'button'
+                let group = L.DomUtil.create('span', 'leaflet-control-locate-location-arrow', this.locationLink);
+                this.locationLink.onclick = this.submit;
+
+                return container;
+            },
+            onRemove: function (map) {
+                // Nothing to do here
+            },
+            submit: function (e) {
+                L.DomEvent.preventDefault(e)
+                console.log('Show cities...')
+                L.DomEvent.stopPropagation(e)
+                console.log('Stopped propagation...')
+
+                // map.removeLayer(points)
+                togglePoints()
+                // navigator.geolocation.watchPosition(success, error)
+                // navigator.geolocation.getCurrentPosition(getPosition)
+
+            }
+        })
+
+        L.control.showSACitiesButton = function (opts) {
+            return new L.Control.Button(opts);
+        }
+
+        // L.control.showSACitiesButton({ position: 'topleft' }).addTo(map);
 
         // ***********************************************************************************
 
         let points = L.geoJSON(testCities).addTo(map)
         pointIndex = leafletKnn(points)
+
+        // console.log(points);
+        function togglePoints() {
+            console.log(points);
+            points.remove()
+            console.log(points);
+            console.log(points._layers);
+        }
 
 
 
@@ -161,7 +220,7 @@
 
         map.on('click', (e) => {
             // onMapClick(e)
-            console.log(e.latlng)
+            // console.log(e.latlng)
             // console.log(e.latlng.lat)
 
             let nearestResult = pointIndex.nearest(e.latlng, 1)[0]
@@ -186,37 +245,43 @@
         })
 
 
-        if (!navigator.geolocation) {
-            console.log('browser does not support geolocation...');
+        // if (!navigator.geolocation) {
+        //     console.log('browser does not support geolocation...');
+        // } else {
+        // setInterval(() => {
+        //     // navigator.geolocation.getCurrentPosition(getPosition)
+        //     // navigator.geolocation.watchPosition(success, error)
+        //     console.log('Watching location...');
+        // }, 3000)
+        // }
 
-        } else {
-            setInterval(() => {
-
-                navigator.geolocation.getCurrentPosition(getPosition)
-            }, 3000)
-        }
-
-        function getPosition(position) {
-            console.log(position)
-            let lat = position.coords.latitude
-            let lon = position.coords.longitude
-            let accuracy = position.coords.accuracy
-            console.log(lat, lon, accuracy)
-
-            if (marker) {
-                map.removeLayer(marker)
-                map.removeLayer(circle)
-            }
-
-            marker = L.marker([lat, lon]).addTo(map)
-            circle = L.circle([lat, lon], { radius: accuracy }).addTo(map)
-
-            let featureGroup = L.featureGroup([marker, circle]).addTo(map)
-
-            map.fitBounds(featureGroup.getBounds())
+        // function getPosition(position) {
+        //     // console.log(position)
+        //     let lat = position.coords.latitude
+        //     let lon = position.coords.longitude
+        //     let accuracy = position.coords.accuracy
+        //     // console.log(lat, lon, accuracy)
 
 
-        }
+        //     if (marker) {
+        //         map.removeLayer(marker)
+        //         map.removeLayer(circle)
+        //     }
+
+
+
+
+        //     marker = L.marker([lat, lon]).addTo(map)
+        //     circle = L.circle([lat, lon], { radius: accuracy }).addTo(map)
+
+        //     let featureGroup = L.featureGroup([marker, circle]).addTo(map)
+
+        //     if (!zoomed) {
+        //         zoomed = map.fitBounds(featureGroup.getBounds());
+        //     }
+        //     // map.fitBounds(featureGroup.getBounds())
+
+        // }
 
     </script>
 
