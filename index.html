@@ -94,10 +94,11 @@
 
             },
             submit: function (e) {
-                L.DomEvent.preventDefault(e)
-                console.log('Getting location...')
-                L.DomEvent.stopPropagation(e)
-                console.log('Stopped propagation...')
+                L.DomEvent.stop(e)
+                // L.DomEvent.preventDefault(e)
+                // console.log('Getting location...')
+                // L.DomEvent.stopPropagation(e)
+                // console.log('Stopped propagation...')
                 // navigator.geolocation.watchPosition(success, error)
                 // navigator.geolocation.getCurrentPosition(getPosition)
                 if (!navigator.geolocation) {
@@ -123,13 +124,13 @@
 
         L.Control.Button = L.Control.extend({
             onAdd: function (map) {
-                let container = L.DomUtil.create('div', 'leaflet-control-locate leaflet-bar leaflet-control');
+                let container = L.DomUtil.create('div', 'leaflet-control-layers leaflet-bar leaflet-control');
                 // this.form = L.DomUtil.create('form', 'form', container);
-                this.locationLink = L.DomUtil.create('a', 'leaflet-bar-part leaflet-bar-part-single', container);
+                this.locationLink = L.DomUtil.create('a', 'leaflet-control-layers-toggle leaflet-bar-part-single', container);
                 this.locationLink.title = 'Show Cities'
                 this.locationLink.href = '#'
                 this.locationLink.role = 'button'
-                let group = L.DomUtil.create('span', 'leaflet-control-locate-location-arrow', this.locationLink);
+                // let group = L.DomUtil.create('span', 'leaflet-control-layers-toggle', this.locationLink);
                 this.locationLink.onclick = this.submit;
 
                 return container;
@@ -138,10 +139,12 @@
                 // Nothing to do here
             },
             submit: function (e) {
-                L.DomEvent.preventDefault(e)
-                console.log('Show cities...')
-                L.DomEvent.stopPropagation(e)
-                console.log('Stopped propagation...')
+                L.DomEvent.stop(e)
+
+                // L.DomEvent.preventDefault(e)
+                // console.log('Show cities...')
+                // L.DomEvent.stopPropagation(e)
+                // console.log('Stopped propagation...')
 
                 // map.removeLayer(points)
                 togglePoints()
@@ -155,20 +158,21 @@
             return new L.Control.Button(opts);
         }
 
-        // L.control.showSACitiesButton({ position: 'topleft' }).addTo(map);
+        L.control.showSACitiesButton({ position: 'topleft' }).addTo(map)
 
         // ***********************************************************************************
 
         let points = L.geoJSON(testCities).addTo(map)
         pointIndex = leafletKnn(points)
 
-        // console.log(points);
+
+
+
         function togglePoints() {
-            console.log(points);
-            points.remove()
-            console.log(points);
-            console.log(points._layers);
+
+
         }
+
 
 
 
