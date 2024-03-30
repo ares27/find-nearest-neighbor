@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Location App</title>
+
+    <!-- <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" /> -->
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="css/style2.css">
+
+    <!-- <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.css"> -->
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- <script src="/js/sacities.js"></script>
+    <script src="/js/leaflet-knn.js"></script> -->
+
+
+
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .split {
+            height: 100%;
+            width: 50%;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            overflow-x: hidden;
+            /* padding-top: 20px; */
+            padding: 10px;
+        }
+
+        .left {
+            left: 0;
+            background-color: lightgray;
+        }
+
+        .right {
+            right: 0;
+            background-color: lightcoral;
+        }
+
+        .centered {
+            /* position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center; */
+            width: 100%;
+            height: 100%;
+            border: 1px solid blue;
+        }
+
+        /* .centered img {
+            width: 150px;
+            border-radius: 50%;
+        } */
+    </style>
+
+
+</head>
+
+<body>
+
+    <div class="split left">
+        <section class="msger">
+            <header class="msger-header">
+                <div class="msger-header-title">
+                    <i class="fa fa-comments-o"></i> Room: <span id="roomName"></span>
+                </div>
+                <div class="msger-header-options">
+                    <span><i class="fa fa-cog"></i></span>
+                </div>
+            </header>
+
+            <main class="msger-chat">
+                <div class="msg left-msg">
+                    <div class="msg-img" style="background-image: url(./assets/usera.png)">
+                    </div>
+
+                    <div class="msg-bubble">
+                        <div class="msg-info">
+                            <div class="msg-info-name">BOT</div>
+                            <div class="msg-info-time">12:45</div>
+                        </div>
+
+                        <div class="msg-text">
+                            Hi, welcome to SimpleChat! Go ahead and send me a message. 😄
+                        </div>
+                    </div>
+                </div>
+
+                <div class="msg right-msg">
+                    <div class="msg-img" style="background-image: url(./assets/user.png)">
+                    </div>
+
+                    <div class="msg-bubble">
+                        <div class="msg-info">
+                            <div class="msg-info-name">Sajad</div>
+                            <div class="msg-info-time">12:46</div>
+                        </div>
+
+                        <div class="msg-text">
+                            You can change your name in JS section!
+                        </div>
+                    </div>
+                </div>
+
+
+            </main>
+
+            <form class="msger-inputarea" id="chat-form">
+                <input type="text" class="msger-input" id="chatInput" placeholder="Enter your message...">
+                <button type="submit" class="msger-send-btn">Send</button>
+            </form>
+        </section>
+
+    </div>
+
+    <div class="split right">
+        <div class="centered">
+            <div id="map" style="width: 100%; height: 100%"></div>
+        </div>
+    </div>
+
+
+
+
+
+    <script src="https://rawgit.com/calvinmetcalf/leaflet-ajax/master/dist/leaflet.ajax.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js"></script>
+
+    <!-- <script src="/js/button.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.11.2/qs.min.js"
+        integrity="sha512-vCegEXqPUYpZsTGz2lk0jaQ1psxtFeniVJACAXhMVxuoYa/N4nZkjoVFOxLwP7uGeQOoemiz7DQrIpRTj4IBPw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- <script src="/socket.io/socket.io.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="js/main.js"></script> -->
+
+    <script>
+        const form = document.getElementById('chat-form')
+        const cMessages = document.querySelector('.msger-chat')
+
+        var map = L.map('map').setView([-26.2044, 28.0456], 13);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        L.marker([-26.2044, 28.0456]).addTo(map)
+            .bindPopup('A pretty CSS popup.<br> Easily customizable.')
+            .openPopup();
+
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault()
+            const input = e.target.elements.chatInput.value
+            console.log(input)
+            // socket.emit('chatMessage', input)
+
+            // clear input
+            e.target.elements.chatInput.value = ''
+            e.target.elements.chatInput.focus()
+
+            outputMessage(input)
+
+        })
+        function outputMessage(message) {
+            console.log('message: ', message);
+            const div = document.createElement('div')
+            div.classList.add('msg', 'right-msg')
+            div.innerHTML = `
+            <div class="msg-img" style="background-image: url(./assets/user.png)">
+                    </div>
+
+                    <div class="msg-bubble">
+                        <div class="msg-info">
+                            <div class="msg-info-name">Sajad</div>
+                            <div class="msg-info-time">12:46</div>
+                        </div>
+
+                        <div class="msg-text">
+                            ${message}
+                        </div>
+                    </div>
+            `
+            cMessages.appendChild(div)
+            cMessages.scrollTop = cMessages.scrollHeight
+        }
+
+
+
+
+    </script>
+
+
+</body>
+
+</html>

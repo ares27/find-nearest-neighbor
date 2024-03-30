@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Location App</title>
+
+    <!-- <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" /> -->
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.css">
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+
+    <script src="/js/sacities.js"></script>
+    <script src="/js/leaflet-knn.js"></script>
+
+
+
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .leaflet-container {
+            height: 100%;
+            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 350px auto;
+            gap: 10px;
+            padding: 10px;
+            height: 500px
+        }
+
+        #form {
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.25rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            height: 3rem;
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
+        }
+
+        #input {
+            border: none;
+            padding: 0 1rem;
+            flex-grow: 1;
+            border-radius: 2rem;
+            margin: 0.25rem;
+        }
+
+        #input:focus {
+            outline: none;
+        }
+
+        #form>button {
+            background: #333;
+            border: none;
+            padding: 0 1rem;
+            margin: 0.25rem;
+            border-radius: 3px;
+            outline: none;
+            color: #fff;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #messages>li {
+            padding: 0.5rem 1rem;
+        }
+
+        #messages>li:nth-child(odd) {
+            background: #efefef;
+        }
+    </style>
+
+
+</head>
+
+<body>
+
+    <div class="grid-container">
+
+        <div class="grid-item" style="width: 100%; height: 100%;border: 1px solid red;">
+            <p>My Location</p>
+            <a href="index.html" class="btn">Leave Room</a>
+            <table>
+                <tr>
+                    <td>Username:</td>
+                    <td><span id="userLbl"></span></td>
+                </tr>
+                <tr>
+                    <td>Room:</td>
+                    <td><span id="roomLbl"></span></td>
+                </tr>
+                <tr>
+                    <td>Latitude:</td>
+                    <td><span id="latLbl"></span></td>
+                </tr>
+                <tr>
+                    <td>Longitude:</td>
+                    <td><span id="lngLbl"></span></td>
+                </tr>
+            </table>
+            <h3><i class="fas fa-users"></i> Users</h3>
+            <ul id="users">
+            </ul>
+            <hr>
+
+            <ul id="messages"></ul>
+            <form id="form" action="">
+                <input id="input" autocomplete="off" /><button>Send</button>
+            </form>
+            <!-- <label>Longitude: <span id="lng"></span></label> -->
+        </div>
+        <div class="grid-item" id="map" style="width: 100%; height: 100%;border: 1px solid red;"></div>
+    </div>
+
+
+
+
+
+
+    <script src="https://rawgit.com/calvinmetcalf/leaflet-ajax/master/dist/leaflet.ajax.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js"></script>
+
+    <!-- <script src="/js/button.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.11.2/qs.min.js"
+        integrity="sha512-vCegEXqPUYpZsTGz2lk0jaQ1psxtFeniVJACAXhMVxuoYa/N4nZkjoVFOxLwP7uGeQOoemiz7DQrIpRTj4IBPw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // let socket = io();
+        // const map = L.map('map').setView([-26.2044, 28.0456], 13);
+        // const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //     maxZoom: 19,
+        //     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        // }).addTo(map);
+
+        // let points = L.geoJSON(testCities).addTo(map)
+        // pointIndex = leafletKnn(points)
+
+
+        // function onMapClick(e) {
+        //     console.log(`lat: ${e.latlng.lat}, lon: ${e.latlng.lng}`)
+        //     let nearestResult = pointIndex.nearest(e.latlng, 1)[0]
+        //     let cityName = nearestResult.layer.feature.properties.name
+        //     let coOrds = nearestResult.layer.feature.geometry.coordinates
+
+        //     setTimeout(() => {
+        //         // map.flyTo([coOrds[1], coOrds[0]], 13)
+        //         // map.panTo([coOrds[1], coOrds[0]], 13)
+        //         // map.setView(new L.LatLng(coOrds[0], coOrds[1]), 13);
+        //         // nearestResult.layer.bindPopup(`${cityName} is the nearest!`).openPopup()
+        //         var popup = L.popup()
+        //             .setLatLng([e.latlng.lat, e.latlng.lng])
+        //             .setContent(`Lat: ${e.latlng.lat}, <br>Lon: ${e.latlng.lng}<br><b>${cityName}</b> is the nearest!`)
+        //             .openOn(map);
+        //     }, 250)
+        // }
+
+        // map.on('click', (e) => {
+        //     onMapClick(e)
+        // })
+
+        // let UserLocationIcon = new L.Icon({
+        //     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+        //     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        //     iconSize: [25, 41],
+        //     iconAnchor: [12, 41],
+        //     popupAnchor: [1, -34],
+        //     shadowSize: [41, 41]
+        // })
+
+        // let myLocationIcon = new L.Icon({
+        //     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        //     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        //     iconSize: [25, 41],
+        //     iconAnchor: [12, 41],
+        //     popupAnchor: [1, -34],
+        //     shadowSize: [41, 41]
+        // })
+
+
+
+        // ***********************************************************************************
+        // LAYER BUTTONS
+        // L.Control
+        //     .Button = L.Control.extend({
+        //         onAdd: function (map) {
+        //             let container = L.DomUtil.create('div', 'leaflet-control-locate leaflet-bar leaflet-control');
+        //             // this.form = L.DomUtil.create('form', 'form', container);
+        //             this.locationLink = L.DomUtil.create('a', 'leaflet-bar-part leaflet-bar-part-single', container);
+        //             this.locationLink.title = 'Show me where I am'
+        //             this.locationLink.href = '#'
+        //             this.locationLink.role = 'button'
+        //             let group = L.DomUtil.create('span', 'leaflet-control-locate-location-arrow', this.locationLink);
+        //             this.locationLink.onclick = this.submit;
+
+        //             return container;
+        //         },
+
+        //         onRemove: function (map) {
+        //             // Nothing to do here
+
+        //         },
+        //         submit: function (e) {
+        //             // L.DomEvent.preventDefault(e);
+        //             L.DomEvent.stop(e)
+        //             // navigator.geolocation.watchPosition(success, error)
+        //             navigator.geolocation.getCurrentPosition(getPosition)
+        //         }
+        //     });
+
+        // L.control
+        //     .button = function (opts) {
+        //         return new L.Control.Button(opts)
+        //     }
+
+        // L.control
+        //     .button({ position: 'topleft' }).addTo(map)
+
+        // ***********************************************************************************
+
+
+
+        // ***********************************************************************************
+        // FUNCTIONS
+        // @getPosition :   Get current position by latitude and longitude
+        // @success, @error :   success checks for current position and renders to screen,
+        //                      error checks for an error and renders the error
+
+        // let marker, circle, zoomed;
+        // function success(pos) {
+        //     const lat = pos.coords.latitude;
+        //     const lng = pos.coords.longitude;
+        //     const accuracy = pos.coords.accuracy;
+
+        //     if (marker) {
+        //         map.removeLayer(marker);
+        //         map.removeLayer(circle);
+        //     }
+
+        //     marker = L.marker([lat, lng], { icon: myLocationIcon }).addTo(map);
+        //     circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
+
+        //     if (!zoomed) {
+        //         zoomed = map.fitBounds(circle.getBounds());
+        //     }
+
+        //     socket.emit('location message', { lat, lng });
+
+
+        //     // map.setView([lat, lng]);
+        //     // Set map focus to current user position
+
+        //     document.getElementById('latLbl').innerText = lat.toFixed(4)
+        //     document.getElementById('lngLbl').innerText = lng.toFixed(4)
+        // }
+
+        // function error(err) {
+
+        //     if (err.code === 1) {
+        //         alert("Please allow geolocation access");
+        //     } else {
+        //         alert("Cannot get current location");
+        //     }
+
+        // }
+
+
+        // if (!navigator.geolocation) {
+        //     console.log('browser does not support geolocation...')
+        // } else {
+        //     navigator.geolocation.getCurrentPosition(getPosition)
+        //     // setInterval(() => {
+        //     //     navigator.geolocation.getCurrentPosition(getPosition)
+        //     // }, 3000)
+        // }
+
+        // function getPosition(position) {
+        //     console.log('Get current position...')
+        //     let lat = position.coords.latitude
+        //     let lng = position.coords.longitude
+        //     let accuracy = position.coords.accuracy
+        //     console.log(lat, lng, accuracy)
+
+        //     if (marker) {
+        //         map.removeLayer(marker)
+        //         map.removeLayer(circle)
+        //     }
+
+        //     marker = L.marker([lat, lng]).addTo(map)
+        //     circle = L.circle([lat, lng], { radius: accuracy }).addTo(map)
+
+        //     let featureGroup = L.featureGroup([marker, circle]).addTo(map)
+        //     map.fitBounds(featureGroup.getBounds())
+
+
+
+        //     socket.emit('location message', { lat, lng })
+        //     document.getElementById('latLbl').innerText = lat
+        //     document.getElementById('lngLbl').innerText = lng
+
+        // }
+
+        // ***********************************************************************************
+
+        // let form = document.getElementById('form')
+        // let input = document.getElementById('input')
+
+        // form.addEventListener('submit', function (e) {
+        //     e.preventDefault();
+        //     if (input.value) {
+        //         // socket.emit('chat message', input.value);
+        //         console.log(input.value);
+        //         socket.emit('message', input.value);
+        //         input.value = '';
+        //     }
+        // });
+
+
+        // socket.on('message', function (msg) {
+        //     var item = document.createElement('li');
+        //     item.textContent = msg;
+        //     messages.appendChild(item);
+        //     window.scrollTo(0, document.body.scrollHeight);
+        // })
+
+        // socket.on('chat message', function (msg) {
+        //     var item = document.createElement('li');
+        //     item.textContent = msg;
+        //     messages.appendChild(item);
+        //     window.scrollTo(0, document.body.scrollHeight);
+        // });
+
+        // socket.on('location message', function (msg) {
+        //     var item = document.createElement('li');
+        //     item.textContent = `${msg.lat}, ${msg.lng}`;
+        //     messages.appendChild(item);
+        //     window.scrollTo(0, document.body.scrollHeight);
+
+        //     marker = L.marker([msg.lat, msg.lng], { icon: UserLocationIcon }).addTo(map);
+        //     // circle = L.circle([msg.lat, msg.lng], { radius: accuracy }).addTo(map);
+        // });
+
+
+    </script>
+
+
+</body>
+
+</html>
