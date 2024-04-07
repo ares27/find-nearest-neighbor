@@ -55,11 +55,6 @@ io.on('connection', (socket) => {
         io.emit('location message', formatMessage(user.username, msg))
     })
 
-    socket.on('markerMessage', (msg) => {
-        console.log('server marker message', msg)
-        io.emit('markerMessage', msg)
-        // console.log('marker message');
-    })
 
     socket.on('disconnect', () => {
         console.log('user disconnected')
@@ -76,6 +71,14 @@ io.on('connection', (socket) => {
                 .emit('roomUsers', {
                     room: user.room,
                     users: getRoomUsers(user.room)
+                })
+
+            // Send info
+            io
+                .to(user.room)
+                .emit('leaveRoom', {
+                    room: user.room,
+                    username: user.username
                 })
         }
     })

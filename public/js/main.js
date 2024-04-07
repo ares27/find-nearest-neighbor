@@ -1,6 +1,8 @@
 const socket = io()
-const chatMessages = document.getElementById('messages')
-const chatForm = document.getElementById('form')
+const chatMessages = document.querySelector('.msger-chat')
+// const chatMessages = document.getElementById('messages')
+// const chatForm = document.getElementById('form')
+const chatForm = document.getElementById('chat-form')
 const input = document.getElementById('input')
 const roomName = document.getElementById('roomLbl')
 const userList = document.getElementById('users')
@@ -43,16 +45,20 @@ socket.on('location message', function (message) {
     chatMessages.scrollTop = chatMessages.scrollHeight
 })
 
+// User leaves room
+socket.on('leaveRoom', ({ room, username }) => {
+    removeLocationMarker(username)
+})
 
 
 chatForm.addEventListener('submit', (e) => {
     e.preventDefault()
-    const input = e.target.elements.input.value
+    const input = e.target.elements.chatInput.value
     socket.emit('chatMessage', input)
 
     // clear input
-    e.target.elements.input.value = ''
-    e.target.elements.input.focus()
+    e.target.elements.chatInput.value = ''
+    e.target.elements.chatInput.focus()
 })
 
 
@@ -61,31 +67,47 @@ chatForm.addEventListener('submit', (e) => {
 
 // Output to DOM
 function outputMessage(message) {
+    console.log('message: ', message);
     const div = document.createElement('div')
-    div.classList.add('message')
+    div.classList.add('msg', 'right-msg')
     div.innerHTML = `
-    <p class="meta"><b>${message.username}</b><span> ${message.time}</span></p>
-    <p class="text">
-        ${message.text}
-    </p>
-    `
+            <div class="msg-img" style="background-image: url(./assets/user.png)">
+                    </div>
+
+                    <div class="msg-bubble">
+                        <div class="msg-info">
+                            <div class="msg-info-name">${message.username}</div>
+                            <div class="msg-info-time">${message.time}</div>
+                        </div>
+
+                        <div class="msg-text">
+                            ${message.text}
+                        </div>
+                    </div>
+            `
     chatMessages.appendChild(div)
+    chatMessages.scrollTop = chatMessages.scrollHeight
 }
 
 function outputLocationMessage(message) {
     const div = document.createElement('div')
-    div.classList.add('message')
+    div.classList.add('msg', 'right-msg')
     div.innerHTML = `
-    <p class="meta"><b>${message.username}</b><span> ${message.time}</span></p>
-    <p class="text">
+    <div class="msg-img" style="background-image: url(./assets/user.png)">
+    </div>
+    <div class="msg-bubble">
+        <div class="msg-info">
+            <div class="msg-info-name">${message.username}</div>
+            <div class="msg-info-time">${message.time}</div>
+        </div>
+
+        <div class="msg-text">
         ${message.text.lat}, ${message.text.lng}
-    </p>
+        </div>
+    </div>
     `
     chatMessages.appendChild(div)
 
-    // document.getElementById('latLbl').innerText = message.text.lat
-    // document.getElementById('lngLbl').innerText = message.text.lng
-    // map.panTo(new L.LatLng(message.text.lat, message.text.lng))
 }
 
 function outputLocationMarker(message) {
@@ -123,6 +145,36 @@ function outputLocationMarker(message) {
     layerGroup = L.layerGroup(markersArray)
     layerGroup.addTo(map)
     // map.panTo(new L.LatLng(message.text.lat, message.text.lng))
+}
+
+function removeLocationMarker(username) {
+    console.log('removing marker for: ', username)
+    let user = username
+
+    if (layerGroup) {
+        let leafletId, indexOfObject
+        for (let key in layerGroup._layers) {
+            let obj = layerGroup._layers[key]
+            // console.log(obj)
+
+            if (obj._leaflet_id !== undefined && user === obj.options.title) {
+                leafletId = obj._leaflet_id
+            }
+
+            indexOfObject = markersArray.findIndex(x => user === x.options.title);
+
+        }
+
+        // console.log('remove layer leafletId: ', leafletId, 'indexOfObject', indexOfObject);
+        if (leafletId !== undefined) {
+            markersArray = markersArray.filter(v => { return v._leaflet_id !== leafletId })
+            // console.log(markersArray);
+            layerGroup.removeLayer(leafletId)
+        } else if (leafletId === undefined) {
+            console.log('no layer to remove')
+        }
+
+    }
 }
 
 // Add room name to DOM
