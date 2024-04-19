@@ -5,6 +5,7 @@ const chatMessages = document.querySelector('.msger-chat')
 const chatForm = document.getElementById('chat-form')
 const input = document.getElementById('input')
 const roomName = document.getElementById('roomLbl')
+const roomUserName = document.getElementById('userLbl')
 const userList = document.getElementById('users')
 let marker, circle, zoomed, layerGroup;
 let markersArray = []
@@ -19,6 +20,7 @@ socket.emit('joinRoom', { username, room })
 
 // Get room and users
 socket.on('roomUsers', ({ room, users }) => {
+    roomUserName.textContent = username
     outputRoomName(room)
     outputUsers(users)
 })
@@ -71,7 +73,7 @@ function outputMessage(message) {
     const div = document.createElement('div')
     div.classList.add('msg', 'right-msg')
     div.innerHTML = `
-            <div class="msg-img" style="background-image: url(./assets/user.png)">
+            <div class="msg-img" style="background-image: url(./assets/usera.png)">
                     </div>
 
                     <div class="msg-bubble">
@@ -114,6 +116,25 @@ function outputLocationMarker(message) {
     let user = message.username
 
     marker = L.marker([message.text.lat, message.text.lng], { icon: myLocationIcon, title: user })
+        .bindPopup(`
+        <table class="table table-sm" id="user-location-table">
+        <tr>
+            <td>User:</td>
+            <td>${user}</td>
+        </tr>
+        <tr>
+            <td>Latitude:</td>
+            <td>${message.text.lat.toFixed(5)}</td>
+        </tr>
+        <tr>
+            <td>Longitude:</td>
+            <td>${message.text.lng.toFixed(5)}</td>
+        </tr>
+        
+        </table>
+        <button type="button" class="btn btn-outline-dark btn-sm" id="go-to-user-location-btn" onclick="goToUserLocation(${message.text.lat.toFixed(5)},${message.text.lng.toFixed(5)})">Go To</button>
+                
+        `)
     markersArray.push(marker)
     // console.log(marker);
 
@@ -175,6 +196,10 @@ function removeLocationMarker(username) {
         }
 
     }
+}
+
+function goToUserLocation(lat, lng) {
+    map.flyTo([lat, lng], 16)
 }
 
 // Add room name to DOM

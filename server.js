@@ -8,7 +8,7 @@ const { Server } = require("socket.io")
 const io = new Server(server)
 const formatMessage = require('./utils/messages')
 const { userJoin, getCurrentUser, userLeave, getRoomUsers } = require('./utils/users')
-const botName = 'YaBOT'
+const botName = 'Yabot'
 app.use(express.static(path.join(__dirname, 'public')))
 
 

@@ -9,7 +9,6 @@ const cityPoints = L.geoJSON(cities).addTo(map)
 pointIndex = leafletKnn(cityPoints)
 
 
-
 // FUNCTIONS
 function onMapClick(e) {
     console.log(`lat: ${e.latlng.lat}, lon: ${e.latlng.lng}`)
@@ -20,46 +19,41 @@ function onMapClick(e) {
     setTimeout(() => {
         let popup = L.popup()
             .setLatLng([e.latlng.lat, e.latlng.lng])
-            .setContent(`Lat: ${e.latlng.lat}, <br>Lon: ${e.latlng.lng}<br><b>${cityName}</b> is the nearest!`)
-            .openOn(map);
+            .setContent(`
+                Lat: ${e.latlng.lat}<br>
+                Lon: ${e.latlng.lng}<br>
+                <b>${cityName}</b> is the nearest!
+            `)
+            .openOn(map)
     }, 250)
 }
 
 function geoLocateSuccess(pos) {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    const accuracy = pos.coords.accuracy;
+    const lat = pos.coords.latitude
+    const lng = pos.coords.longitude
+    const accuracy = pos.coords.accuracy
 
     if (marker) {
-        map.removeLayer(marker);
-        map.removeLayer(circle);
+        map.removeLayer(marker)
+        map.removeLayer(circle)
     }
 
-    marker = L.marker([lat, lng], { icon: myLocationIcon }).addTo(map);
-    circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
+    marker = L.marker([lat, lng], { icon: myLocationIcon }).addTo(map)
+    circle = L.circle([lat, lng], { radius: accuracy }).addTo(map)
 
     if (!zoomed) {
-        zoomed = map.fitBounds(circle.getBounds());
+        zoomed = map.fitBounds(circle.getBounds())
     }
 
-    socket.emit('location message', { lat, lng });
-
-
-    // map.setView([lat, lng]);
-    // Set map focus to current user position
-
-    // document.getElementById('latLbl').innerText = lat.toFixed(4)
-    // document.getElementById('lngLbl').innerText = lng.toFixed(4)
-
-
+    socket.emit('location message', { lat, lng })
 
 }
 
 function geoLocateError(err) {
     if (err.code === 1) {
-        alert("Please allow geolocation access");
+        alert("Please allow geolocation access")
     } else {
-        alert("Cannot get current location");
+        alert("Cannot get current location")
     }
 }
 
