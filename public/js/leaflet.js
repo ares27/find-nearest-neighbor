@@ -1,13 +1,44 @@
-// let marker, circle, zoomed;
+let watchMarker, circle, zoomed, panned
+const apiKey = "AAPK38d5964a655b48dbb8fb30fe5bc1098co28bAFzHHonjZPlh5QIp2DRruOGyamDWbvQJegvAQlvfxlKs94COtvB-ad44WdjI";
 const map = L.map('map').setView([-26.2044, 28.0456], 13)
-const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map)
-
-const cityPoints = L.geoJSON(cities).addTo(map)
+const Stadia_AlidadeSatellite = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {
+    minZoom: 0,
+    maxZoom: 20,
+    attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    ext: 'jpg'
+})
+let cityPointsMarker = {
+    radius: 5,
+    fillColor: "#0000FF",
+    color: "#0000",
+    weight: 5,
+    opacity: 1,
+    fillOpacity: .8
+}
+const cityPoints = L.geoJSON(cities, {
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, cityPointsMarker)
+    },
+    onEachFeature: function (feature, layer) {
+        layer.bindPopup(feature.properties.name)
+    }
+}).addTo(map)
 pointIndex = leafletKnn(cityPoints)
 
+let basemaps = {
+    'Open Street Map': osm,
+    'Satellite Map': Stadia_AlidadeSatellite,
+}
+
+let overlayMaps = {
+    'SA Cities': cityPoints
+}
+
+L.control.layers(basemaps, overlayMaps).addTo(map)
 
 // FUNCTIONS
 function onMapClick(e) {
@@ -33,27 +64,31 @@ function geoLocateSuccess(pos) {
     const lng = pos.coords.longitude
     const accuracy = pos.coords.accuracy
 
-    if (marker) {
-        map.removeLayer(marker)
-        map.removeLayer(circle)
-    }
+    // if (watchMarker) {
+    //     map.removeLayer(watchMarker)
+    //     map.removeLayer(circle)
+    // }
 
-    marker = L.marker([lat, lng], { icon: myLocationIcon }).addTo(map)
-    circle = L.circle([lat, lng], { radius: accuracy }).addTo(map)
+    // watchMarker = L.marker([lat, lng], { icon: myLocationIcon }).addTo(map);
+    // circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
 
-    if (!zoomed) {
-        zoomed = map.fitBounds(circle.getBounds())
-    }
+    // if (!zoomed) {
+    //     zoomed = map.fitBounds(circle.getBounds());
+    // }
 
-    socket.emit('location message', { lat, lng })
+    // document.getElementById('latLbl').innerText = lat
+    // document.getElementById('lngLbl').innerText = lng
+    map.panTo(new L.LatLng(lat, lng))
+    socket.emit('watch location message', { lat, lng, accuracy, message: 'watching you!' })
 
 }
 
 function geoLocateError(err) {
     if (err.code === 1) {
-        alert("Please allow geolocation access")
+        alert("Please allow geolocation access");
     } else {
-        alert("Cannot get current location")
+        // alert("Cannot get current location");
+        console.log(err);
     }
 }
 
@@ -111,7 +146,7 @@ const myLocationIcon = new L.Icon({
 
 // LAYER BUTTONS
 L.Control
-    .Button = L.Control.extend({
+    .FindUserLocationButton = L.Control.extend({
         onAdd: function (map) {
             let container = L.DomUtil.create('div', 'leaflet-control-locate leaflet-bar leaflet-control')
             this.locationLink = L.DomUtil.create('a', 'leaflet-bar-part leaflet-bar-part-single', container)
@@ -122,21 +157,47 @@ L.Control
             this.locationLink.onclick = this.submit
             return container
         },
-
         onRemove: function (map) {
             // Nothing to do here
-
         },
         submit: function (e) {
             L.DomEvent.stop(e)
-            navigator.geolocation.getCurrentPosition(geoLocateGetPosition)
+            // navigator.geolocation.getCurrentPosition(geoLocateGetPosition)
+            alert('Try Again Later!')
         }
     })
 
-L.control
-    .button = function (opts) {
-        return new L.Control.Button(opts)
-    }
+L.Control
+    .WatchMeButton = L.Control.extend({
+        onAdd: function (map) {
+            let container = L.DomUtil.create('div', 'leaflet-control-locate leaflet-bar leaflet-control')
+            this.locationLink = L.DomUtil.create('a', 'leaflet-bar-part leaflet-bar-part-single', container)
+            this.locationLink.title = 'Watch Me'
+            this.locationLink.href = '#'
+            this.locationLink.role = 'button'
+            let group = L.DomUtil.create('i', 'fa fa-binoculars', this.locationLink)
+            this.locationLink.onclick = this.submit
+            return container
+        },
+        onRemove: function (map) {
+            // Nothing to do here
+        },
+        submit: function (e) {
+            L.DomEvent.stop(e)
+            navigator.geolocation.watchPosition(geoLocateSuccess, geoLocateError)
+        }
+    })
+
 
 L.control
-    .button({ position: 'topleft' }).addTo(map)
+    .findUserLocationButton = function (opts) {
+        return new L.Control.FindUserLocationButton(opts)
+    }
+L.control.watchMeButton = function (opts) {
+    return new L.Control.WatchMeButton(opts)
+}
+
+L.control
+    .findUserLocationButton({ position: 'topleft' }).addTo(map)
+L.control
+    .watchMeButton({ position: 'topleft' }).addTo(map)

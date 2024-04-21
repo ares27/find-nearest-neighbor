@@ -7,7 +7,7 @@ const input = document.getElementById('input')
 const roomName = document.getElementById('roomLbl')
 const roomUserName = document.getElementById('userLbl')
 const userList = document.getElementById('users')
-let marker, circle, zoomed, layerGroup;
+let marker, layerGroup
 let markersArray = []
 
 // Get username and room from URL
@@ -36,7 +36,7 @@ socket.on('message', (message) => {
 
 // Location from server
 socket.on('location message', function (message) {
-    console.log(`client received location message: `, message)
+    // console.log(`client received location message: `, message)
     let user = message.username
     console.log(`${user} made call...`)
 
@@ -47,6 +47,13 @@ socket.on('location message', function (message) {
     chatMessages.scrollTop = chatMessages.scrollHeight
 })
 
+socket.on('watch location message', (message) => {
+    console.log('watch location message', message);
+    // console.log(message);
+    outputLocationMarker(message)
+})
+
+
 // User leaves room
 socket.on('leaveRoom', ({ room, username }) => {
     removeLocationMarker(username)
@@ -55,13 +62,18 @@ socket.on('leaveRoom', ({ room, username }) => {
 
 chatForm.addEventListener('submit', (e) => {
     e.preventDefault()
-    const input = e.target.elements.chatInput.value
-    socket.emit('chatMessage', input)
+    const input = e.target.elements.chatInput
 
-    // clear input
-    e.target.elements.chatInput.value = ''
-    e.target.elements.chatInput.focus()
+    if (input.value === '') {
+        return false
+    }
+
+    socket.emit('chatMessage', input.value)
+    input.value = ''
+    input.focus()
 })
+
+
 
 
 
@@ -69,7 +81,7 @@ chatForm.addEventListener('submit', (e) => {
 
 // Output to DOM
 function outputMessage(message) {
-    console.log('message: ', message);
+    // console.log('message: ', message);
     const div = document.createElement('div')
     div.classList.add('msg', 'right-msg')
     div.innerHTML = `
@@ -112,8 +124,14 @@ function outputLocationMessage(message) {
 
 }
 
-function outputLocationMarker(message) {
+async function outputLocationMarker(message) {
     let user = message.username
+    let latlng = {
+        lat: message.text.lat,
+        lng: message.text.lng
+    }
+
+    const { address } = await reverseGeolocate(latlng)
 
     marker = L.marker([message.text.lat, message.text.lng], { icon: myLocationIcon, title: user })
         .bindPopup(`
@@ -124,19 +142,20 @@ function outputLocationMarker(message) {
         </tr>
         <tr>
             <td>Latitude:</td>
-            <td>${message.text.lat.toFixed(5)}</td>
+            <td>${message.text.lat.toFixed(8)}</td>
         </tr>
         <tr>
             <td>Longitude:</td>
-            <td>${message.text.lng.toFixed(5)}</td>
+            <td>${message.text.lng.toFixed(8)}</td>
         </tr>
-        
+        <tr>
+            <td>Address:</td>
+            <td>${address.Address}</td>
+        </tr>        
         </table>
-        <button type="button" class="btn btn-outline-dark btn-sm" id="go-to-user-location-btn" onclick="goToUserLocation(${message.text.lat.toFixed(5)},${message.text.lng.toFixed(5)})">Go To</button>
-                
+        <button type="button" class="btn btn-outline-dark btn-sm" id="go-to-user-location-btn" onclick="goToUserLocation(${message.text.lat.toFixed(5)},${message.text.lng.toFixed(5)})">Go To</button>  
         `)
     markersArray.push(marker)
-    // console.log(marker);
 
     if (layerGroup) {
         let leafletId, indexOfObject
@@ -165,7 +184,6 @@ function outputLocationMarker(message) {
 
     layerGroup = L.layerGroup(markersArray)
     layerGroup.addTo(map)
-    // map.panTo(new L.LatLng(message.text.lat, message.text.lng))
 }
 
 function removeLocationMarker(username) {
@@ -217,7 +235,24 @@ function outputUsers(users) {
 
 
 
-
+function reverseGeolocate(latlng) {
+    return new Promise((resolve, reject) => {
+        const rGeoCode = L.esri.Geocoding
+            .reverseGeocode({
+                apikey: apiKey
+            })
+            .latlng(latlng)
+            .run(function (error, result) {
+                if (error) {
+                    reject(error);
+                } else {
+                    // console.log(result);
+                    // const address = result.address.Address;
+                    resolve(result);
+                }
+            });
+    });
+}
 
 
 

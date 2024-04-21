@@ -55,6 +55,13 @@ io.on('connection', (socket) => {
         io.emit('location message', formatMessage(user.username, msg))
     })
 
+    // Watch client location 
+    socket.on('watch location message', (msg) => {
+        const user = getCurrentUser(socket.id)
+        console.log('watch location message', { user, msg })
+        io.emit('watch location message', formatMessage(user.username, msg))
+    })
+
 
     socket.on('disconnect', () => {
         console.log('user disconnected')
