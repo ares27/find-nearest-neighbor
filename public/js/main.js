@@ -48,7 +48,7 @@ socket.on('location message', function (message) {
 })
 
 socket.on('watch location message', (message) => {
-    console.log('watch location message', message);
+    // console.log('watch location message', message);
     // console.log(message);
     outputLocationMarker(message)
 })

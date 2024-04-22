@@ -78,13 +78,14 @@ function geoLocateSuccess(pos) {
     // watchMarker = L.marker([lat, lng], { icon: myLocationIcon }).addTo(map);
     // circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
 
-    // if (!zoomed) {
-    //     zoomed = map.fitBounds(circle.getBounds());
-    // }
+    if (!zoomed) {
+        // zoomed = map.fitBounds(circle.getBounds());
+        zoomed = map.panTo(new L.LatLng(lat, lng))
+
+    }
 
     // document.getElementById('latLbl').innerText = lat
     // document.getElementById('lngLbl').innerText = lng
-    map.panTo(new L.LatLng(lat, lng))
     socket.emit('watch location message', { lat, lng, accuracy, message: 'watching you!' })
 
 }
@@ -190,7 +191,16 @@ L.Control
         },
         submit: function (e) {
             L.DomEvent.stop(e)
-            navigator.geolocation.watchPosition(geoLocateSuccess, geoLocateError)
+            // navigator.geolocation.watchPosition(geoLocateSuccess, geoLocateError)
+            // navigator.geolocation.watchPosition(geoLocateSuccess, geoLocateError)
+            if (!navigator.geolocation) {
+                console.log("Your browser does not support geolocation")
+            } else {
+                setInterval(() => {
+                    // navigator.geolocation.watchPosition(geoLocateSuccess, geoLocateError)
+                    navigator.geolocation.getCurrentPosition(geoLocateSuccess)
+                }, 2000);
+            }
         }
     })
 
