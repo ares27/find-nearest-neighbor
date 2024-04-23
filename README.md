@@ -1,3 +1,3 @@
-# find-nearest-neighbor
+# find-nearest-neighbour
 
-Updated with vscode
+Find your nearest neighbour...
